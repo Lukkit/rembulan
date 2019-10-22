@@ -54,6 +54,8 @@ public interface RuntimeEnvironment {
 	 * @return  the file system
 	 */
 	FileSystem fileSystem();
+	
+	ResourceFinder resourceFinder();
 
 	/**
 	 * Returns the value of the environment variable {@code name}, or {@code null} when

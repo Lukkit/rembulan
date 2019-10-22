@@ -43,12 +43,24 @@
 
 package net.sandius.rembulan.lib;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+
 import net.sandius.rembulan.ByteString;
 import net.sandius.rembulan.ByteStringBuilder;
 import net.sandius.rembulan.Conversions;
 import net.sandius.rembulan.LuaRuntimeException;
 import net.sandius.rembulan.StateContext;
 import net.sandius.rembulan.Table;
+import net.sandius.rembulan.env.ResourceFinder;
 import net.sandius.rembulan.env.RuntimeEnvironment;
 import net.sandius.rembulan.impl.UnimplementedFunction;
 import net.sandius.rembulan.load.ChunkLoader;
@@ -59,15 +71,6 @@ import net.sandius.rembulan.runtime.LuaFunction;
 import net.sandius.rembulan.runtime.ResolvedControlThrowable;
 import net.sandius.rembulan.runtime.UnresolvedControlThrowable;
 import net.sandius.rembulan.util.ByteIterator;
-
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 
 /**
  * The package library provides basic facilities for loading modules in Lua. It exports
@@ -169,6 +172,7 @@ public final class ModuleLib {
 		Objects.requireNonNull(env);
 
 		FileSystem fileSystem = runtimeEnvironment != null ? runtimeEnvironment.fileSystem() : null;
+        ResourceFinder resourceFinder = runtimeEnvironment != null ? runtimeEnvironment.resourceFinder() : null;
 
 		Table t = context.newTable();
 
@@ -222,7 +226,7 @@ public final class ModuleLib {
 		{
 			addSearcher(searchers, new PreloadSearcher(preload));
 			if (chunkLoader != null) {
-				addSearcher(searchers, new ChunkLoadPathSearcher(fileSystem, t, chunkLoader, env));
+				addSearcher(searchers, new ChunkLoadPathSearcher(resourceFinder, t, chunkLoader, env));
 			}
 			if (classLoader != null) {
 				addSearcher(searchers, new LoaderProviderServiceLoaderSearcher(runtimeEnvironment, env, classLoader));
@@ -463,12 +467,12 @@ public final class ModuleLib {
 	static class ChunkLoadPathSearcher extends AbstractLibFunction {
 
 		private final Table libTable;
-		private final FileSystem fileSystem;
+		private final ResourceFinder resourceFinder;
 		private final ChunkLoader loader;
 		private final Object env;
 
-		ChunkLoadPathSearcher(FileSystem fileSystem, Table libTable, ChunkLoader loader, Object env) {
-			this.fileSystem = Objects.requireNonNull(fileSystem);
+		ChunkLoadPathSearcher(ResourceFinder resourceFinder, Table libTable, ChunkLoader loader, Object env) {
+			this.resourceFinder = Objects.requireNonNull(resourceFinder);
 			this.libTable = Objects.requireNonNull(libTable);
 			this.loader = Objects.requireNonNull(loader);
 			this.env = env;
@@ -480,7 +484,7 @@ public final class ModuleLib {
 		}
 
 		private LuaFunction loaderForPath(ByteString path) throws LoaderException {
-			return BasicLib.loadTextChunkFromFile(fileSystem, loader, path.toString(), BasicLib.Load.DEFAULT_MODE, env);
+			return BasicLib.loadTextChunkFromFile(resourceFinder, loader, path.toString(), BasicLib.Load.DEFAULT_MODE, env);
 		}
 
 		@Override
@@ -493,31 +497,30 @@ public final class ModuleLib {
 			if (path == null) {
 				throw new IllegalStateException("'package.path' must be a string");
 			}
+			
+			List<ByteString> paths = SearchPath.getPaths(modName, path, SearchPath.DEFAULT_SEP, ByteString.of("/"));
 
-			List<ByteString> paths = SearchPath.getPaths(modName, path, SearchPath.DEFAULT_SEP, ByteString.of(fileSystem.getSeparator()));
+            ByteStringBuilder msgBuilder = new ByteStringBuilder();
+            for (ByteString s : paths) {
+                try (InputStream in = resourceFinder.findResource(s.toString())) {
+                    if (in != null) {
+                        final LuaFunction fn;
+                        try {
+                            fn = loaderForPath(s);
+                        } catch (LoaderException ex) {
+                            throw new LuaRuntimeException("error loading module '" + modName + "' from file '" + path
+                                    + "'" + "\n\t" + ex.getLuaStyleErrorMessage());
+                        }
 
-			ByteStringBuilder msgBuilder = new ByteStringBuilder();
-			for (ByteString s : paths) {
-				Path p = fileSystem.getPath(s.toString());
-				if (Files.isReadable(p)) {
-					final LuaFunction fn;
-					try {
-						fn = loaderForPath(s);
-					}
-					catch (LoaderException ex) {
-						throw new LuaRuntimeException("error loading module '" + modName + "' from file '" + s + "'"
-								+ "\n\t" + ex.getLuaStyleErrorMessage());
-					}
-
-					context.getReturnBuffer().setTo(fn, s);
-					return;
-				}
-				else {
-					msgBuilder.append("\n\tno file '").append(s).append((byte) '\'');
-				}
-			}
-
-			context.getReturnBuffer().setTo(msgBuilder.toByteString());
+                        context.getReturnBuffer().setTo(fn, path);
+                        return;
+                    }
+                } catch (IOException e) {
+                    msgBuilder.append("\n\tno file '").append(s).append((byte) '\'');
+                }
+            }
+            
+            context.getReturnBuffer().setTo(msgBuilder.toByteString());
 		}
 
 	}

@@ -43,7 +43,26 @@
 
 package net.sandius.rembulan.lib;
 
-import net.sandius.rembulan.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.InvalidPathException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
+
+import net.sandius.rembulan.ByteString;
+import net.sandius.rembulan.ByteStringBuilder;
+import net.sandius.rembulan.Conversions;
+import net.sandius.rembulan.LuaRuntimeException;
+import net.sandius.rembulan.Metatables;
+import net.sandius.rembulan.Ordering;
+import net.sandius.rembulan.PlainValueTypeNamer;
+import net.sandius.rembulan.StateContext;
+import net.sandius.rembulan.Table;
+import net.sandius.rembulan.Variable;
+import net.sandius.rembulan.env.ResourceFinder;
 import net.sandius.rembulan.env.RuntimeEnvironment;
 import net.sandius.rembulan.load.ChunkLoader;
 import net.sandius.rembulan.load.LoaderException;
@@ -55,16 +74,6 @@ import net.sandius.rembulan.runtime.ProtectedResumable;
 import net.sandius.rembulan.runtime.ResolvedControlThrowable;
 import net.sandius.rembulan.runtime.ReturnBuffer;
 import net.sandius.rembulan.runtime.UnresolvedControlThrowable;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * The basic library provides core functions to Lua. If you do not include this library in your
@@ -232,8 +241,8 @@ public final class BasicLib {
 	 * @see <a href="http://www.lua.org/manual/5.3/manual.html#pdf-dofile">
 	 *     the Lua 5.3 Reference Manual entry for <code>dofile</code></a>
 	 */
-	public static LuaFunction dofile(Object env, ChunkLoader loader, FileSystem fileSystem) {
-		return new DoFile(fileSystem, loader, env);
+	public static LuaFunction dofile(Object env, ChunkLoader loader, ResourceFinder resourceFinder) {
+		return new DoFile(resourceFinder, loader, env);
 	}
 
 	/**
@@ -393,8 +402,8 @@ public final class BasicLib {
 	 * @see <a href="http://www.lua.org/manual/5.3/manual.html#pdf-loadfile">
 	 *     the Lua 5.3 Reference Manual entry for <code>loadfile</code></a>
 	 */
-	public static LuaFunction loadfile(Object env, ChunkLoader loader, FileSystem fileSystem) {
-		return new LoadFile(fileSystem, loader, env);
+	public static LuaFunction loadfile(Object env, ChunkLoader loader, ResourceFinder resourceFinder) {
+		return new LoadFile(resourceFinder, loader, env);
 	}
 
 	/**
@@ -812,17 +821,17 @@ public final class BasicLib {
 		Objects.requireNonNull(env);
 
 		OutputStream out = runtimeEnvironment != null ? runtimeEnvironment.standardOutput() : null;
-		FileSystem fileSystem = runtimeEnvironment != null ? runtimeEnvironment.fileSystem() : null;
+		ResourceFinder resourceFinder = runtimeEnvironment != null ? runtimeEnvironment.resourceFinder() : null;
 
 		env.rawset("assert", assertFn());
 		env.rawset("collectgarbage", collectgarbage());
-		if (loader != null && fileSystem != null) env.rawset("dofile", dofile(env, loader, fileSystem));
+		if (loader != null && resourceFinder != null) env.rawset("dofile", dofile(env, loader, resourceFinder));
 		env.rawset("error", error());
 		env.rawset("_G", env);
 		env.rawset("getmetatable", getmetatable());
 		env.rawset("ipairs", ipairs());
 		if (loader != null) env.rawset("load", load(env, loader));
-		if (loader != null && fileSystem != null) env.rawset("loadfile", loadfile(env, loader, fileSystem));
+		if (loader != null && resourceFinder != null) env.rawset("loadfile", loadfile(env, loader, resourceFinder));
 		env.rawset("next", next());
 		env.rawset("pairs", pairs());
 		env.rawset("pcall", pcall());
@@ -1718,12 +1727,12 @@ public final class BasicLib {
 
 	static class LoadFile extends AbstractLibFunction {
 
-		private final FileSystem fileSystem;
+		private final ResourceFinder resourceFinder;
 		private final ChunkLoader loader;
 		private final Object defaultEnv;
 
-		public LoadFile(FileSystem fileSystem, ChunkLoader loader, Object defaultEnv) {
-			this.fileSystem = Objects.requireNonNull(fileSystem);
+		public LoadFile(ResourceFinder resourceFinder, ChunkLoader loader, Object defaultEnv) {
+			this.resourceFinder = Objects.requireNonNull(resourceFinder);
 			this.loader = Objects.requireNonNull(loader);
 			this.defaultEnv = defaultEnv;
 		}
@@ -1752,7 +1761,7 @@ public final class BasicLib {
 			else {
 				final LuaFunction fn;
 				try {
-					fn = loadTextChunkFromFile(fileSystem, loader, chunkName, modeString, env);
+					fn = loadTextChunkFromFile(resourceFinder, loader, chunkName, modeString, env);
 				}
 				catch (LoaderException ex) {
 					context.getReturnBuffer().setTo(null, ex.getLuaStyleErrorMessage());
@@ -1768,19 +1777,21 @@ public final class BasicLib {
 
 	}
 
-	static LuaFunction loadTextChunkFromFile(FileSystem fileSystem, ChunkLoader loader, String fileName, ByteString modeString, Object env)
+	static LuaFunction loadTextChunkFromFile(ResourceFinder resourceFinder, ChunkLoader loader, String fileName, ByteString modeString, Object env)
 			throws LoaderException {
 
 		final LuaFunction fn;
-		try {
-			Path p = fileSystem.getPath(fileName);
+		try (InputStream in = resourceFinder.findResource(fileName)) {
+			if (in == null) {
+	            throw new FileNotFoundException();
+			}
 
 			if (!modeString.contains((byte) 't')) {
 				throw new LuaRuntimeException("attempt to load a text chunk (mode is '" + modeString + "')");
 			}
 
 			// FIXME: this is extremely wasteful!
-			byte[] bytes = Files.readAllBytes(p);
+			byte[] bytes = in.readAllBytes();
 			ByteString chunkText = ByteString.copyOf(bytes);
 			fn = loader.loadTextChunk(new Variable(env), fileName, chunkText.toString());
 		}
@@ -1797,12 +1808,12 @@ public final class BasicLib {
 
 	static class DoFile extends AbstractLibFunction {
 
-		private final FileSystem fileSystem;
+		private final ResourceFinder resourceFinder;
 		private final ChunkLoader loader;
 		private final Object env;
 
-		public DoFile(FileSystem fileSystem, ChunkLoader loader, Object env) {
-			this.fileSystem = Objects.requireNonNull(fileSystem);
+		public DoFile(ResourceFinder resourceFinder, ChunkLoader loader, Object env) {
+			this.resourceFinder = Objects.requireNonNull(resourceFinder);
 			this.loader = Objects.requireNonNull(loader);
 			this.env = env;
 		}
@@ -1824,7 +1835,7 @@ public final class BasicLib {
 
 			final LuaFunction fn;
 			try {
-				fn = loadTextChunkFromFile(fileSystem, loader, fileName.toString(), Load.DEFAULT_MODE, env);
+				fn = loadTextChunkFromFile(resourceFinder, loader, fileName.toString(), Load.DEFAULT_MODE, env);
 			}
 			catch (LoaderException ex) {
 				throw new LuaRuntimeException(ex.getLuaStyleErrorMessage());

@@ -27,6 +27,7 @@ class SystemRuntimeEnvironment implements RuntimeEnvironment {
 	private final InputStream in;
 	private final OutputStream out;
 	private final OutputStream err;
+	private final ResourceFinder resourceFinder;
 
 	private static final SystemRuntimeEnvironment INSTANCE = new SystemRuntimeEnvironment(
 			System.in, System.out, System.err);
@@ -35,9 +36,17 @@ class SystemRuntimeEnvironment implements RuntimeEnvironment {
 		this.in = in;
 		this.out = out;
 		this.err = err;
-	}
+		this.resourceFinder = SystemResourceFinder.getInstance();
+    }
 
-	public static SystemRuntimeEnvironment getInstance() {
+    SystemRuntimeEnvironment(ResourceFinder resourceFinder) {
+        this.in = System.in;
+        this.out = System.out;
+        this.err = System.err;
+        this.resourceFinder = resourceFinder;
+    }
+
+    public static SystemRuntimeEnvironment getInstance() {
 		return INSTANCE;
 	}
 
@@ -59,6 +68,11 @@ class SystemRuntimeEnvironment implements RuntimeEnvironment {
 	@Override
 	public FileSystem fileSystem() {
 		return FileSystems.getDefault();
+	}
+	
+	@Override
+	public ResourceFinder resourceFinder() {
+	    return resourceFinder;
 	}
 
 	@Override
