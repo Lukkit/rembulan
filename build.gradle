@@ -2,7 +2,7 @@ allprojects  {
   apply plugin: 'maven'
   apply plugin: 'eclipse'
   group = 'no.ecc.rembulan'
-  version = '0.3.1'
+  version = '0.3.2'
 }
 
 subprojects {
@@ -14,7 +14,7 @@ subprojects {
   repositories {
     mavenLocal()
 
-    maven { url "http://repo.maven.apache.org/maven2" }
+    maven { url "https://repo.maven.apache.org/maven2" }
   }
   
   task sourceJar(type: Jar) {

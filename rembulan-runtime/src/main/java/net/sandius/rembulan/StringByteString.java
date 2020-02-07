@@ -33,6 +33,8 @@ class StringByteString extends ByteString {
 
 	private final String string;
 	private final Charset charset;
+	
+	private byte[] bytes;
 
 	private int byteHashCode;
 	private int byteLength;
@@ -106,6 +108,9 @@ class StringByteString extends ByteString {
 	}
 
 	private int computeLength() {
+	    if (bytes != null) {
+	        return bytes.length;
+	    }
 		int len = 0;
 		ByteIterator it = new CharsetEncoderByteIterator(string, charset);
 		while (it.hasNext()) {
@@ -137,8 +142,10 @@ class StringByteString extends ByteString {
 
 	// must not escape, may be an array from the cache!
 	private byte[] toBytes() {
-		// TODO: cache the result
-		return string.getBytes(charset);
+	    if (bytes == null) {
+	        bytes = string.getBytes(charset);
+	    }
+		return bytes;
 	}
 
 	@Override

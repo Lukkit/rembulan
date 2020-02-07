@@ -16,11 +16,8 @@
 
 package net.sandius.rembulan.parser.ast;
 
-import net.sandius.rembulan.ByteString;
-import net.sandius.rembulan.ByteStringBuilder;
-import net.sandius.rembulan.LuaFormat;
-
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -30,6 +27,10 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+
+import net.sandius.rembulan.ByteString;
+import net.sandius.rembulan.ByteStringBuilder;
+import net.sandius.rembulan.LuaFormat;
 
 public class StringLiteral extends Literal {
 
@@ -72,9 +73,9 @@ public class StringLiteral extends Literal {
 		}
 	}
 
-	private static ByteString stringValueOf(InputStream in) throws IOException {
+	private static ByteString stringValueOf(InputStream in, int length) throws IOException {
 		Objects.requireNonNull(in);
-		BufferedInputStream stream = new BufferedInputStream(in);
+        InputStream stream = in instanceof ByteArrayInputStream ? in : new BufferedInputStream(in, Math.min(length, 1024));
 
 		// encoder for UTF-8 byte sequences
 		CharsetEncoder utf8Encoder = StandardCharsets.UTF_8.newEncoder()
@@ -246,7 +247,7 @@ public class StringLiteral extends Literal {
 
 	private static ByteString stringValueOf(ByteString s) {
 		try {
-			return stringValueOf(s.asInputStream());
+			return stringValueOf(s.asInputStream(), s.length());
 		}
 		catch (IOException ex) {
 			// should not happen!
