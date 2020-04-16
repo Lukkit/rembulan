@@ -16,6 +16,8 @@
 
 package net.sandius.rembulan.runtime;
 
+import java.util.Objects;
+
 import net.sandius.rembulan.Arithmetic;
 import net.sandius.rembulan.ByteString;
 import net.sandius.rembulan.Conversions;
@@ -25,8 +27,6 @@ import net.sandius.rembulan.Metatables;
 import net.sandius.rembulan.Ordering;
 import net.sandius.rembulan.Table;
 import net.sandius.rembulan.Userdata;
-
-import java.util.Objects;
 
 /**
  * A static class for dispatching operations according to the semantics of Lua 5.3.
@@ -1142,11 +1142,21 @@ public final class Dispatch {
 		if (!rawEqual
 				&& ((a instanceof Table && b instanceof Table)
 				|| (a instanceof Userdata && b instanceof Userdata))) {
+		    
+            // http://www.lua.org/pil/13.2.html
+            // "An equality comparison never raises an error, but if two objects have
+            // different metamethods, the equality operation results in false, without even
+            // calling any metamethod."
 
-			Object handler = Metatables.binaryHandlerFor(context, Metatables.MT_EQ, a, b);
+		    Object handlerA = Metatables.getMetamethod(context, Metatables.MT_EQ, a);
+		    Object handlerB = Metatables.getMetamethod(context, Metatables.MT_EQ, b);
+		    if (handlerA != null && !handlerA.equals(handlerB)) {
+	                    context.getReturnBuffer().setTo(false);
+	                    return;
+		    }
 
-			if (handler != null) {
-				_call_comparison_mt(context, polarity, handler, a, b);
+			if (handlerA != null) {
+				_call_comparison_mt(context, polarity, handlerA, a, b);
 				return;
 			}
 
