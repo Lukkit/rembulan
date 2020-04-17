@@ -26,13 +26,10 @@ import net.sandius.rembulan.parser.ast.{Chunk, Expr}
 import net.sandius.rembulan.parser.{Expressions, Parser}
 import net.sandius.rembulan.test.Util
 import net.sandius.rembulan.test.fragments._
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
 import scala.collection.JavaConverters._
 
-@RunWith(classOf[JUnitRunner])
 class IRTranslationTest extends FunSpec with MustMatchers {
 
   val bundles = Seq(

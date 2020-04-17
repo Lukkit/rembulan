@@ -21,11 +21,8 @@ import net.sandius.rembulan.load.ChunkClassLoader
 import net.sandius.rembulan.runtime.LuaFunction
 import net.sandius.rembulan.test.Util
 import net.sandius.rembulan.test.fragments.BasicFragments
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
-@RunWith(classOf[JUnitRunner])
 class FragmentCompileAndLoadTest extends FunSpec with MustMatchers {
 
   def withProperty[A](key: String, value: String)(body: => A): A = {

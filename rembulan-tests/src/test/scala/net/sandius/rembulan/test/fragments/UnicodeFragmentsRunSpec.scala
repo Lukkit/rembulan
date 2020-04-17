@@ -17,10 +17,7 @@
 package net.sandius.rembulan.test.fragments
 
 import net.sandius.rembulan.test.FragmentExecTestSuite
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class UnicodeFragmentsRunSpec extends FragmentExecTestSuite {
 
   override def bundles = Seq(UnicodeFragments)

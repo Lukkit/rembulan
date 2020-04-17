@@ -15,7 +15,7 @@
 
   <groupId>net.sandius.rembulan</groupId>
   <artifactId>rembulan-parent</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.3.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Rembulan parent POM</name>

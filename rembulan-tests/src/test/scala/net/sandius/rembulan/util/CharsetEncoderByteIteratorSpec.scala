@@ -18,14 +18,11 @@ package net.sandius.rembulan.util
 
 import java.nio.charset.Charset
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
-@RunWith(classOf[JUnitRunner])
 class CharsetEncoderByteIteratorSpec extends FunSpec with MustMatchers {
 
   describe ("constructor") {

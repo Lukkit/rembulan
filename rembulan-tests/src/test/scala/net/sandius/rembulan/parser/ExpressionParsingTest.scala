@@ -21,11 +21,8 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, PrintWriter}
 import net.sandius.rembulan.parser.ast.Expr
 import net.sandius.rembulan.parser.util.FormattingPrinterVisitor
 import net.sandius.rembulan.test.Util
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
-@RunWith(classOf[JUnitRunner])
 class ExpressionParsingTest extends FunSpec with MustMatchers {
 
   def tryParseExpr(s: String): Unit = {

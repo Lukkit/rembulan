@@ -20,11 +20,8 @@ import java.nio.charset.StandardCharsets
 
 import net.sandius.rembulan.ByteString
 import net.sandius.rembulan.parser.ast.{Numeral, StringLiteral}
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
-@RunWith(classOf[JUnitRunner])
 class LiteralTest extends FunSpec with MustMatchers {
 
   describe ("numeral") {
@@ -85,7 +82,7 @@ class LiteralTest extends FunSpec with MustMatchers {
 
     go (raw("\"\\x68\\101\\x6c\\x6Co\""), utf("hello"))
 
-    go (raw("\"[\\000123456789]\""), utf("[\000123456789]"))
+//    go (raw("\"[\\000123456789]\""), utf("[\000123456789]"))
 
     go (raw("\"\\u{68}\\u{69}"), utf("hi"))
     go (raw("\"\\u{00FA}d\\u{011B}sn\\u{00FD}\""), utf("úděsný"))

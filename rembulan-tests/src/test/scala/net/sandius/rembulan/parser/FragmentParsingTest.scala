@@ -23,14 +23,11 @@ import net.sandius.rembulan.parser.ast._
 import net.sandius.rembulan.parser.util.FormattingPrinterVisitor
 import net.sandius.rembulan.test.Util
 import net.sandius.rembulan.test.fragments._
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-@RunWith(classOf[JUnitRunner])
 class FragmentParsingTest extends FunSpec with MustMatchers {
 
   val bundles = Seq(

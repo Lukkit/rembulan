@@ -122,14 +122,14 @@ object StringLibFragments extends FragmentBundle with FragmentExpectations with 
     about ("upper") {
 
       // from the PUC-Lua test suite (strings.lua)
-      program ("""return string.upper("ab\0c")""") succeedsWith ("AB\0C")
+      program ("""return string.upper("ab\u00000c")""") succeedsWith ("AB\u00000C")
 
     }
 
     about ("lower") {
 
       // from the PUC-Lua test suite (strings.lua)
-      program ("""return string.lower("\0ABCc%$")""") succeedsWith ("\0abcc%$")
+      program ("""return string.lower("\u00000ABCc%$")""") succeedsWith ("\u00000abcc%$")
 
     }
 
@@ -137,7 +137,7 @@ object StringLibFragments extends FragmentBundle with FragmentExpectations with 
 
       // from the PUC-Lua test suite (strings.lua)
       program ("""return string.rep('teste', 0)""") succeedsWith ("")
-      program ("""return string.rep('tés\00tê', 2)""") succeedsWith ("tés\0têtés\000tê")
+      program ("""return string.rep('tés\u00000tê', 2)""") succeedsWith ("tés\u00000têtés\u00000tê")
       program ("""return string.rep('', 10)""") succeedsWith ("")
 
     }

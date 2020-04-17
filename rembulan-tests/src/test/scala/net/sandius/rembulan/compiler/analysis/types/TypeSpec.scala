@@ -16,13 +16,10 @@
 
 package net.sandius.rembulan.compiler.analysis.types
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FunSpec, MustMatchers}
 
 import scala.collection.JavaConverters._
 
-@RunWith(classOf[JUnitRunner])
 class TypeSpec extends FunSpec with MustMatchers {
 
   import LuaTypes._
