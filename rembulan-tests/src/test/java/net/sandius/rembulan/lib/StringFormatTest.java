@@ -7,7 +7,7 @@ import org.junit.runners.MethodSorters;
 import net.sandius.rembulan.testenv.TestBase;
 
 @FixMethodOrder(MethodSorters.JVM)
-public class StringPatternTest extends TestBase {
+public class StringFormatTest extends TestBase {
     
     @Test
     public void testStringFormatPercentG() throws Exception {
