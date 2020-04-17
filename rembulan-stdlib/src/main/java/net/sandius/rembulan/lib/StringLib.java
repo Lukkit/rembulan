@@ -43,6 +43,14 @@
 
 package net.sandius.rembulan.lib;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import net.sandius.rembulan.ByteString;
 import net.sandius.rembulan.ByteStringBuilder;
 import net.sandius.rembulan.Conversions;
@@ -62,12 +70,6 @@ import net.sandius.rembulan.runtime.LuaFunction;
 import net.sandius.rembulan.runtime.ResolvedControlThrowable;
 import net.sandius.rembulan.runtime.UnresolvedControlThrowable;
 import net.sandius.rembulan.util.ByteIterator;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>This library provides generic functions for string manipulation, such as finding
@@ -1084,6 +1086,11 @@ public final class StringLib {
 						: ByteString.of(sign(v > 0, flags) + LuaFormat.INF);
 
 				bld.append(justified(width, flags, chars.toString()));
+			}
+			else if (spec == 'g' || spec == 'G') {
+			    NumberFormat df = NumberFormat.getInstance(Locale.US);
+			    df.setMinimumFractionDigits(0);
+			    bld.append(df.format(v));
 			}
 			else {
 				StringBuilder fmtBld = new StringBuilder();

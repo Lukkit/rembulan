@@ -14,6 +14,7 @@ public class StringPatternTest extends TestBase {
         assertThat(run("return string.format('a%gb', 1)")[0]).isEqualTo("a1b");
         assertThat(run("return string.format('a%gb', 2.0)")[0]).isEqualTo("a2b");
         assertThat(run("return string.format('a%gb', 3.1)")[0]).isEqualTo("a3.1b");
+        assertThat(run("return string.format('a%gb', 30)")[0]).isEqualTo("a30b");
     }
 
 }
