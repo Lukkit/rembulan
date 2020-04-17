@@ -16,5 +16,13 @@ public class StringFormatTest extends TestBase {
         assertThat(run("return string.format('a%gb', 3.1)")[0]).isEqualTo("a3.1b");
         assertThat(run("return string.format('a%gb', 30)")[0]).isEqualTo("a30b");
     }
+    
+    @Test
+    public void testStringFormatPercentF() throws Exception {
+        assertThat(run("return string.format('%03.0f', 23)")[0]).isEqualTo("023");
+        assertThat(run("return string.format('%03.2f', 23.456)")[0]).isEqualTo("23.46");
+        assertThat(run("return string.format('%3.2f', 23.456)")[0]).isEqualTo("23.46");
+        assertThat(run("return string.format('%3.0f', 23)")[0]).isEqualTo(" 23");
+    }
 
 }

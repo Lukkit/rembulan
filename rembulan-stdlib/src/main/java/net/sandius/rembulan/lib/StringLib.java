@@ -1105,7 +1105,7 @@ public final class StringLib {
 				// width required by Formatter, but not supplied
 				else if (hasFlag(flags, FLAG_ZERO_PAD)) fmtBld.append('1');
 
-				if (precision > 0) fmtBld.append('.').append(precision);
+				if (precision >= 0) fmtBld.append('.').append(precision);
 				fmtBld.append(spec);
 				String formatted = String.format(fmtBld.toString(), v);
 
